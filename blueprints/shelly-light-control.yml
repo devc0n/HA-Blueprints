@@ -1,32 +1,46 @@
 blueprint:
   name: "Shelly Universele Kamerverlichting"
   description: >
-    Universele blueprint voor Shelly-schakelaars die alle lampen in dezelfde
-    ruimte bedienen. Ondersteunt single, double, triple click en long press.
+    Universele blueprint voor Shelly Gen2/Gen3 schakelaars die alle lampen
+    in dezelfde ruimte bedienen. Ondersteunt single, double, triple push
+    en long press.
     
-    - 1x klik: Toggle (aan op basis van zonstand, of uit)
-    - 2x klik: Helder wit licht (100%)
-    - 3x klik: Sfeerverlichting (warm, gedimd)
+    - 1x druk: Toggle (aan op basis van zonstand, of uit)
+    - 2x druk: Helder wit licht (100%)
+    - 3x druk: Sfeerverlichting (warm, gedimd)
     - Lang indrukken: Nachtlamp (zeer zacht)
+    
+    Werkt met Shelly 1 Mini Gen3, Shelly Plus 1, Shelly Plus 2PM, etc.
+    Zorg dat de Shelly op "Detached" modus staat.
   domain: automation
   author: "Ricardo"
   input:
     shelly_device:
       name: "Shelly apparaat"
-      description: "Selecteer de Shelly schakelaar voor deze kamer"
+      description: "Selecteer het Shelly apparaat voor deze kamer"
       selector:
         device:
           integration: shelly
-          
+
+    shelly_channel:
+      name: "Shelly kanaal"
+      description: "Input kanaal (meestal 1, bij 2-kanaals apparaten evt. 2)"
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 4
+          step: 1
+
     target_area:
       name: "Kamer / Area"
       description: "De ruimte waarvan alle lampen bediend worden"
       selector:
         area: {}
 
-    # --- 2x klik: helder licht ---
+    # --- 2x druk: helder licht ---
     bright_brightness:
-      name: "Helderheid - Helder (2x klik)"
+      name: "Helderheid - Helder (2x druk)"
       description: "Helderheid voor helder/werklicht"
       default: 100
       selector:
@@ -37,7 +51,7 @@ blueprint:
           unit_of_measurement: "%"
 
     bright_color_temp:
-      name: "Kleurtemperatuur - Helder (2x klik)"
+      name: "Kleurtemperatuur - Helder (2x druk)"
       description: "Kleurtemperatuur in Kelvin voor helder licht"
       default: 4000
       selector:
@@ -47,9 +61,9 @@ blueprint:
           step: 100
           unit_of_measurement: "K"
 
-    # --- 3x klik: sfeerverlichting ---
+    # --- 3x druk: sfeerverlichting ---
     cozy_brightness:
-      name: "Helderheid - Sfeer (3x klik)"
+      name: "Helderheid - Sfeer (3x druk)"
       description: "Helderheid voor sfeerverlichting"
       default: 40
       selector:
@@ -60,7 +74,7 @@ blueprint:
           unit_of_measurement: "%"
 
     cozy_color_temp:
-      name: "Kleurtemperatuur - Sfeer (3x klik)"
+      name: "Kleurtemperatuur - Sfeer (3x druk)"
       description: "Kleurtemperatuur in Kelvin voor sfeerverlichting"
       default: 2200
       selector:
@@ -93,7 +107,7 @@ blueprint:
           step: 100
           unit_of_measurement: "K"
 
-    # --- Zon-gebaseerde instellingen voor 1x klik ---
+    # --- Zon-gebaseerde instellingen voor 1x druk ---
     day_brightness:
       name: "Helderheid - Overdag"
       description: "Helderheid wanneer de zon boven de horizon staat"
@@ -167,7 +181,7 @@ blueprint:
       selector:
         number:
           min: 20
-          max: 3
+          max: 23
           step: 1
 
 mode: single
@@ -178,6 +192,7 @@ trigger:
     event_type: shelly.click
     event_data:
       device_id: !input shelly_device
+      channel: !input shelly_channel
     id: shelly_click
 
 action:
@@ -187,7 +202,7 @@ action:
       sun_elevation: "{{ state_attr('sun.sun', 'elevation') }}"
       current_hour: "{{ now().hour }}"
       late_hour: !input late_night_hour
-      # Zon-gebaseerde waarden voor 1x klik
+      # Zon-gebaseerde waarden voor 1x druk
       day_br: !input day_brightness
       day_ct: !input day_color_temp
       eve_br: !input evening_brightness
@@ -221,25 +236,25 @@ action:
 
   - choose:
       # ============================================
-      # 1x KLIK - Toggle (uit/aan op basis van zon)
+      # 1x DRUK - Toggle (uit/aan op basis van zon)
       # ============================================
       - conditions:
           - condition: template
-            value_template: "{{ click_type == 'single' }}"
+            value_template: "{{ click_type == 'single_push' }}"
         sequence:
           - choose:
-              # Lampen staan aan → uitzetten
+              # Lampen staan aan -> uitzetten
               - conditions:
                   - condition: template
                     value_template: "{{ lights_on }}"
                 sequence:
-                  - service: light.turn_off
+                  - action: light.turn_off
                     target:
                       area_id: !input target_area
 
-            # Lampen staan uit → aanzetten op basis van zon
+            # Lampen staan uit -> aanzetten op basis van zon
             default:
-              - service: light.turn_on
+              - action: light.turn_on
                 target:
                   area_id: !input target_area
                 data:
@@ -247,13 +262,13 @@ action:
                   kelvin: "{{ auto_color_temp | int }}"
 
       # ============================================
-      # 2x KLIK - Helder wit licht
+      # 2x DRUK - Helder wit licht
       # ============================================
       - conditions:
           - condition: template
-            value_template: "{{ click_type == 'double' }}"
+            value_template: "{{ click_type == 'double_push' }}"
         sequence:
-          - service: light.turn_on
+          - action: light.turn_on
             target:
               area_id: !input target_area
             data:
@@ -261,13 +276,13 @@ action:
               kelvin: !input bright_color_temp
 
       # ============================================
-      # 3x KLIK - Sfeerverlichting
+      # 3x DRUK - Sfeerverlichting
       # ============================================
       - conditions:
           - condition: template
-            value_template: "{{ click_type == 'triple' }}"
+            value_template: "{{ click_type == 'triple_push' }}"
         sequence:
-          - service: light.turn_on
+          - action: light.turn_on
             target:
               area_id: !input target_area
             data:
@@ -279,9 +294,9 @@ action:
       # ============================================
       - conditions:
           - condition: template
-            value_template: "{{ click_type == 'long' }}"
+            value_template: "{{ click_type == 'long_push' }}"
         sequence:
-          - service: light.turn_on
+          - action: light.turn_on
             target:
               area_id: !input target_area
             data:
