@@ -195,6 +195,12 @@ trigger:
       channel: !input shelly_channel
     id: shelly_click
 
+condition:
+  - condition: template
+    value_template: >
+      {{ trigger.event.data.click_type in
+         ['single_push', 'double_push', 'triple_push', 'long_push'] }}
+
 action:
   - variables:
       click_type: "{{ trigger.event.data.click_type }}"
@@ -259,7 +265,7 @@ action:
                   area_id: !input target_area
                 data:
                   brightness_pct: "{{ auto_brightness | int }}"
-                  kelvin: "{{ auto_color_temp | int }}"
+                  color_temp_kelvin: "{{ auto_color_temp | int }}"
 
       # ============================================
       # 2x DRUK - Helder wit licht
@@ -273,7 +279,7 @@ action:
               area_id: !input target_area
             data:
               brightness_pct: !input bright_brightness
-              kelvin: !input bright_color_temp
+              color_temp_kelvin: !input bright_color_temp
 
       # ============================================
       # 3x DRUK - Sfeerverlichting
@@ -287,7 +293,7 @@ action:
               area_id: !input target_area
             data:
               brightness_pct: !input cozy_brightness
-              kelvin: !input cozy_color_temp
+              color_temp_kelvin: !input cozy_color_temp
 
       # ============================================
       # LANG INDRUKKEN - Nachtlamp
@@ -301,4 +307,4 @@ action:
               area_id: !input target_area
             data:
               brightness_pct: !input night_brightness
-              kelvin: !input night_color_temp
+              color_temp_kelvin: !input night_color_temp
