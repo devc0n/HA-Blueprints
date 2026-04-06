@@ -193,17 +193,32 @@ trigger:
     event_data:
       device_id: !input shelly_device
       channel: !input shelly_channel
-    id: shelly_click
-
-condition:
-  - condition: template
-    value_template: >
-      {{ trigger.event.data.click_type in
-         ['single_push', 'double_push', 'triple_push', 'long_push'] }}
+      click_type: single_push
+    id: single
+  - platform: event
+    event_type: shelly.click
+    event_data:
+      device_id: !input shelly_device
+      channel: !input shelly_channel
+      click_type: double_push
+    id: double
+  - platform: event
+    event_type: shelly.click
+    event_data:
+      device_id: !input shelly_device
+      channel: !input shelly_channel
+      click_type: triple_push
+    id: triple
+  - platform: event
+    event_type: shelly.click
+    event_data:
+      device_id: !input shelly_device
+      channel: !input shelly_channel
+      click_type: long_push
+    id: long
 
 action:
   - variables:
-      click_type: "{{ trigger.event.data.click_type }}"
       area_id: !input target_area
       sun_elevation: "{{ state_attr('sun.sun', 'elevation') }}"
       current_hour: "{{ now().hour }}"
@@ -245,8 +260,8 @@ action:
       # 1x DRUK - Toggle (uit/aan op basis van zon)
       # ============================================
       - conditions:
-          - condition: template
-            value_template: "{{ click_type == 'single_push' }}"
+          - condition: trigger
+            id: single
         sequence:
           - choose:
               # Lampen staan aan -> uitzetten
@@ -271,8 +286,8 @@ action:
       # 2x DRUK - Helder wit licht
       # ============================================
       - conditions:
-          - condition: template
-            value_template: "{{ click_type == 'double_push' }}"
+          - condition: trigger
+            id: double
         sequence:
           - action: light.turn_on
             target:
@@ -285,8 +300,8 @@ action:
       # 3x DRUK - Sfeerverlichting
       # ============================================
       - conditions:
-          - condition: template
-            value_template: "{{ click_type == 'triple_push' }}"
+          - condition: trigger
+            id: triple
         sequence:
           - action: light.turn_on
             target:
@@ -299,8 +314,8 @@ action:
       # LANG INDRUKKEN - Nachtlamp
       # ============================================
       - conditions:
-          - condition: template
-            value_template: "{{ click_type == 'long_push' }}"
+          - condition: trigger
+            id: long
         sequence:
           - action: light.turn_on
             target:
