@@ -1,0 +1,289 @@
+blueprint:
+  name: "Shelly Universele Kamerverlichting"
+  description: >
+    Universele blueprint voor Shelly-schakelaars die alle lampen in dezelfde
+    ruimte bedienen. Ondersteunt single, double, triple click en long press.
+    
+    - 1x klik: Toggle (aan op basis van zonstand, of uit)
+    - 2x klik: Helder wit licht (100%)
+    - 3x klik: Sfeerverlichting (warm, gedimd)
+    - Lang indrukken: Nachtlamp (zeer zacht)
+  domain: automation
+  author: "Ricardo"
+  input:
+    shelly_device:
+      name: "Shelly apparaat"
+      description: "Selecteer de Shelly schakelaar voor deze kamer"
+      selector:
+        device:
+          integration: shelly
+          
+    target_area:
+      name: "Kamer / Area"
+      description: "De ruimte waarvan alle lampen bediend worden"
+      selector:
+        area: {}
+
+    # --- 2x klik: helder licht ---
+    bright_brightness:
+      name: "Helderheid - Helder (2x klik)"
+      description: "Helderheid voor helder/werklicht"
+      default: 100
+      selector:
+        number:
+          min: 50
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+
+    bright_color_temp:
+      name: "Kleurtemperatuur - Helder (2x klik)"
+      description: "Kleurtemperatuur in Kelvin voor helder licht"
+      default: 4000
+      selector:
+        number:
+          min: 2000
+          max: 6500
+          step: 100
+          unit_of_measurement: "K"
+
+    # --- 3x klik: sfeerverlichting ---
+    cozy_brightness:
+      name: "Helderheid - Sfeer (3x klik)"
+      description: "Helderheid voor sfeerverlichting"
+      default: 40
+      selector:
+        number:
+          min: 5
+          max: 80
+          step: 5
+          unit_of_measurement: "%"
+
+    cozy_color_temp:
+      name: "Kleurtemperatuur - Sfeer (3x klik)"
+      description: "Kleurtemperatuur in Kelvin voor sfeerverlichting"
+      default: 2200
+      selector:
+        number:
+          min: 2000
+          max: 4000
+          step: 100
+          unit_of_measurement: "K"
+
+    # --- Lang indrukken: nachtlamp ---
+    night_brightness:
+      name: "Helderheid - Nachtlamp"
+      description: "Helderheid voor nachtlamp modus"
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 15
+          step: 1
+          unit_of_measurement: "%"
+
+    night_color_temp:
+      name: "Kleurtemperatuur - Nachtlamp"
+      description: "Kleurtemperatuur in Kelvin voor nachtlamp"
+      default: 2000
+      selector:
+        number:
+          min: 2000
+          max: 3000
+          step: 100
+          unit_of_measurement: "K"
+
+    # --- Zon-gebaseerde instellingen voor 1x klik ---
+    day_brightness:
+      name: "Helderheid - Overdag"
+      description: "Helderheid wanneer de zon boven de horizon staat"
+      default: 100
+      selector:
+        number:
+          min: 30
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+
+    day_color_temp:
+      name: "Kleurtemperatuur - Overdag"
+      description: "Kleurtemperatuur overdag"
+      default: 4000
+      selector:
+        number:
+          min: 2000
+          max: 6500
+          step: 100
+          unit_of_measurement: "K"
+
+    evening_brightness:
+      name: "Helderheid - Avond"
+      description: "Helderheid na zonsondergang"
+      default: 60
+      selector:
+        number:
+          min: 10
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+
+    evening_color_temp:
+      name: "Kleurtemperatuur - Avond"
+      description: "Kleurtemperatuur na zonsondergang"
+      default: 2700
+      selector:
+        number:
+          min: 2000
+          max: 4000
+          step: 100
+          unit_of_measurement: "K"
+
+    late_night_brightness:
+      name: "Helderheid - Laat (na 23:00)"
+      description: "Helderheid laat op de avond"
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 80
+          step: 5
+          unit_of_measurement: "%"
+
+    late_night_color_temp:
+      name: "Kleurtemperatuur - Laat (na 23:00)"
+      description: "Kleurtemperatuur laat op de avond"
+      default: 2200
+      selector:
+        number:
+          min: 2000
+          max: 3000
+          step: 100
+          unit_of_measurement: "K"
+
+    late_night_hour:
+      name: "Starttijd 'laat op de avond'"
+      description: "Vanaf welk uur de late-nacht instellingen actief zijn"
+      default: 23
+      selector:
+        number:
+          min: 20
+          max: 3
+          step: 1
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: event
+    event_type: shelly.click
+    event_data:
+      device_id: !input shelly_device
+    id: shelly_click
+
+action:
+  - variables:
+      click_type: "{{ trigger.event.data.click_type }}"
+      area_id: !input target_area
+      sun_elevation: "{{ state_attr('sun.sun', 'elevation') }}"
+      current_hour: "{{ now().hour }}"
+      late_hour: !input late_night_hour
+      # Zon-gebaseerde waarden voor 1x klik
+      day_br: !input day_brightness
+      day_ct: !input day_color_temp
+      eve_br: !input evening_brightness
+      eve_ct: !input evening_color_temp
+      late_br: !input late_night_brightness
+      late_ct: !input late_night_color_temp
+      # Bepaal helderheid en kleurtemp op basis van tijd/zon
+      auto_brightness: >
+        {% if current_hour | int >= late_hour | int or current_hour | int < 6 %}
+          {{ late_br }}
+        {% elif sun_elevation | float <= 0 %}
+          {{ eve_br }}
+        {% else %}
+          {{ day_br }}
+        {% endif %}
+      auto_color_temp: >
+        {% if current_hour | int >= late_hour | int or current_hour | int < 6 %}
+          {{ late_ct }}
+        {% elif sun_elevation | float <= 0 %}
+          {{ eve_ct }}
+        {% else %}
+          {{ day_ct }}
+        {% endif %}
+      # Check of er lampen aan staan in de kamer
+      lights_on: >
+        {{ area_entities(area_id)
+           | select('match', 'light\.')
+           | select('is_state', 'on')
+           | list
+           | count > 0 }}
+
+  - choose:
+      # ============================================
+      # 1x KLIK - Toggle (uit/aan op basis van zon)
+      # ============================================
+      - conditions:
+          - condition: template
+            value_template: "{{ click_type == 'single' }}"
+        sequence:
+          - choose:
+              # Lampen staan aan → uitzetten
+              - conditions:
+                  - condition: template
+                    value_template: "{{ lights_on }}"
+                sequence:
+                  - service: light.turn_off
+                    target:
+                      area_id: !input target_area
+
+            # Lampen staan uit → aanzetten op basis van zon
+            default:
+              - service: light.turn_on
+                target:
+                  area_id: !input target_area
+                data:
+                  brightness_pct: "{{ auto_brightness | int }}"
+                  kelvin: "{{ auto_color_temp | int }}"
+
+      # ============================================
+      # 2x KLIK - Helder wit licht
+      # ============================================
+      - conditions:
+          - condition: template
+            value_template: "{{ click_type == 'double' }}"
+        sequence:
+          - service: light.turn_on
+            target:
+              area_id: !input target_area
+            data:
+              brightness_pct: !input bright_brightness
+              kelvin: !input bright_color_temp
+
+      # ============================================
+      # 3x KLIK - Sfeerverlichting
+      # ============================================
+      - conditions:
+          - condition: template
+            value_template: "{{ click_type == 'triple' }}"
+        sequence:
+          - service: light.turn_on
+            target:
+              area_id: !input target_area
+            data:
+              brightness_pct: !input cozy_brightness
+              kelvin: !input cozy_color_temp
+
+      # ============================================
+      # LANG INDRUKKEN - Nachtlamp
+      # ============================================
+      - conditions:
+          - condition: template
+            value_template: "{{ click_type == 'long' }}"
+        sequence:
+          - service: light.turn_on
+            target:
+              area_id: !input target_area
+            data:
+              brightness_pct: !input night_brightness
+              kelvin: !input night_color_temp
