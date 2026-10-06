@@ -2,13 +2,15 @@ blueprint:
   name: "Shelly Universele Kamerverlichting"
   description: >
     Universele blueprint voor Shelly Gen2/Gen3 schakelaars die alle lampen
-    in dezelfde ruimte bedienen. Ondersteunt single, double, triple push
-    en long press.
+    in dezelfde ruimte bedienen.
     
-    - 1x druk: Toggle (aan op basis van zonstand, of uit)
-    - 2x druk: Helder wit licht (100%)
-    - 3x druk: Sfeerverlichting (warm, gedimd)
-    - Lang indrukken: Nachtlamp (zeer zacht)
+    - 1x druk: Toggle — sfeerverlichting op basis van zonstand, of uit
+    - 2x druk: Focus — helder wit werklicht (100%)
+    - 3x druk: Feest — langzame kleur-fade loop (regenboog)
+    - Lang indrukken: Nachtlamp (1%, zeer warm)
+    
+    Mode is 'restart': elke knopdruk stopt een lopende actie (zoals de
+    kleur-loop) en start de nieuwe actie.
     
     Werkt met Shelly 1 Mini Gen3, Shelly Plus 1, Shelly Plus 2PM, etc.
     Zorg dat de Shelly op "Detached" modus staat.
@@ -28,7 +30,7 @@ blueprint:
       default: 1
       selector:
         number:
-          min: 1
+          min: 0
           max: 4
           step: 1
 
@@ -38,79 +40,10 @@ blueprint:
       selector:
         area: {}
 
-    # --- 2x druk: helder licht ---
-    bright_brightness:
-      name: "Helderheid - Helder (2x druk)"
-      description: "Helderheid voor helder/werklicht"
-      default: 100
-      selector:
-        number:
-          min: 50
-          max: 100
-          step: 5
-          unit_of_measurement: "%"
-
-    bright_color_temp:
-      name: "Kleurtemperatuur - Helder (2x druk)"
-      description: "Kleurtemperatuur in Kelvin voor helder licht"
-      default: 4000
-      selector:
-        number:
-          min: 2000
-          max: 6500
-          step: 100
-          unit_of_measurement: "K"
-
-    # --- 3x druk: sfeerverlichting ---
-    cozy_brightness:
-      name: "Helderheid - Sfeer (3x druk)"
-      description: "Helderheid voor sfeerverlichting"
-      default: 40
-      selector:
-        number:
-          min: 5
-          max: 80
-          step: 5
-          unit_of_measurement: "%"
-
-    cozy_color_temp:
-      name: "Kleurtemperatuur - Sfeer (3x druk)"
-      description: "Kleurtemperatuur in Kelvin voor sfeerverlichting"
-      default: 2200
-      selector:
-        number:
-          min: 2000
-          max: 4000
-          step: 100
-          unit_of_measurement: "K"
-
-    # --- Lang indrukken: nachtlamp ---
-    night_brightness:
-      name: "Helderheid - Nachtlamp"
-      description: "Helderheid voor nachtlamp modus"
-      default: 2
-      selector:
-        number:
-          min: 1
-          max: 15
-          step: 1
-          unit_of_measurement: "%"
-
-    night_color_temp:
-      name: "Kleurtemperatuur - Nachtlamp"
-      description: "Kleurtemperatuur in Kelvin voor nachtlamp"
-      default: 2000
-      selector:
-        number:
-          min: 2000
-          max: 3000
-          step: 100
-          unit_of_measurement: "K"
-
-    # --- Zon-gebaseerde instellingen voor 1x druk ---
+    # --- 1x druk: sfeer op basis van zon ---
     day_brightness:
       name: "Helderheid - Overdag"
-      description: "Helderheid wanneer de zon boven de horizon staat"
+      description: "Helderheid wanneer de zon hoog staat (> 10°)"
       default: 100
       selector:
         number:
@@ -122,7 +55,7 @@ blueprint:
     day_color_temp:
       name: "Kleurtemperatuur - Overdag"
       description: "Kleurtemperatuur overdag"
-      default: 4000
+      default: 3500
       selector:
         number:
           min: 2000
@@ -130,10 +63,32 @@ blueprint:
           step: 100
           unit_of_measurement: "K"
 
+    sunset_brightness:
+      name: "Helderheid - Zonsondergang"
+      description: "Helderheid rond zonsondergang (zon tussen -4° en 10°)"
+      default: 70
+      selector:
+        number:
+          min: 10
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+
+    sunset_color_temp:
+      name: "Kleurtemperatuur - Zonsondergang"
+      description: "Kleurtemperatuur rond zonsondergang"
+      default: 2700
+      selector:
+        number:
+          min: 2000
+          max: 4000
+          step: 100
+          unit_of_measurement: "K"
+
     evening_brightness:
       name: "Helderheid - Avond"
-      description: "Helderheid na zonsondergang"
-      default: 60
+      description: "Helderheid als het donker is (zon onder -4°)"
+      default: 50
       selector:
         number:
           min: 10
@@ -143,30 +98,30 @@ blueprint:
 
     evening_color_temp:
       name: "Kleurtemperatuur - Avond"
-      description: "Kleurtemperatuur na zonsondergang"
-      default: 2700
+      description: "Kleurtemperatuur in de avond"
+      default: 2200
       selector:
         number:
           min: 2000
-          max: 4000
+          max: 3500
           step: 100
           unit_of_measurement: "K"
 
     late_night_brightness:
-      name: "Helderheid - Laat (na 23:00)"
-      description: "Helderheid laat op de avond"
-      default: 30
+      name: "Helderheid - Laat op de avond"
+      description: "Helderheid na het ingestelde 'laat' uur"
+      default: 25
       selector:
         number:
           min: 5
-          max: 80
+          max: 60
           step: 5
           unit_of_measurement: "%"
 
     late_night_color_temp:
-      name: "Kleurtemperatuur - Laat (na 23:00)"
+      name: "Kleurtemperatuur - Laat op de avond"
       description: "Kleurtemperatuur laat op de avond"
-      default: 2200
+      default: 2000
       selector:
         number:
           min: 2000
@@ -184,7 +139,77 @@ blueprint:
           max: 23
           step: 1
 
-mode: single
+    # --- 2x druk: focus ---
+    focus_brightness:
+      name: "Helderheid - Focus (2x druk)"
+      description: "Helderheid voor focus/werklicht"
+      default: 100
+      selector:
+        number:
+          min: 50
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+
+    focus_color_temp:
+      name: "Kleurtemperatuur - Focus (2x druk)"
+      description: "Kleurtemperatuur in Kelvin voor focus licht"
+      default: 4000
+      selector:
+        number:
+          min: 2500
+          max: 6500
+          step: 100
+          unit_of_measurement: "K"
+
+    # --- Lang indrukken: nachtlamp ---
+    night_brightness:
+      name: "Helderheid - Nachtlamp"
+      description: "Helderheid voor nachtlamp modus"
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+          step: 1
+          unit_of_measurement: "%"
+
+    night_color_temp:
+      name: "Kleurtemperatuur - Nachtlamp"
+      description: "Kleurtemperatuur in Kelvin voor nachtlamp"
+      default: 2000
+      selector:
+        number:
+          min: 2000
+          max: 2500
+          step: 100
+          unit_of_measurement: "K"
+
+    # --- 3x druk: feestmodus ---
+    party_brightness:
+      name: "Helderheid - Feestmodus (3x druk)"
+      description: "Helderheid tijdens de kleur-fade loop"
+      default: 80
+      selector:
+        number:
+          min: 20
+          max: 100
+          step: 5
+          unit_of_measurement: "%"
+
+    party_transition:
+      name: "Feest - Fade snelheid (seconden)"
+      description: "Hoe lang elke kleurovergang duurt in seconden"
+      default: 4
+      selector:
+        number:
+          min: 1
+          max: 15
+          step: 1
+          unit_of_measurement: "s"
+
+# restart: elke nieuwe knopdruk stopt de lopende actie (bijv. kleur-loop)
+mode: restart
 max_exceeded: silent
 
 trigger:
@@ -220,32 +245,38 @@ trigger:
 action:
   - variables:
       area_id: !input target_area
-      sun_elevation: "{{ state_attr('sun.sun', 'elevation') }}"
-      current_hour: "{{ now().hour }}"
-      late_hour: !input late_night_hour
-      # Zon-gebaseerde waarden voor 1x druk
+      sun_el: "{{ state_attr('sun.sun', 'elevation') | float(0) }}"
+      hour: "{{ now().hour }}"
+      late_h: !input late_night_hour
+      # Zon-gebaseerde sfeerwaarden
       day_br: !input day_brightness
       day_ct: !input day_color_temp
+      sunset_br: !input sunset_brightness
+      sunset_ct: !input sunset_color_temp
       eve_br: !input evening_brightness
       eve_ct: !input evening_color_temp
       late_br: !input late_night_brightness
       late_ct: !input late_night_color_temp
-      # Bepaal helderheid en kleurtemp op basis van tijd/zon
-      auto_brightness: >
-        {% if current_hour | int >= late_hour | int or current_hour | int < 6 %}
+      # Bereken sfeer op basis van zonstand en uur
+      mood_brightness: >
+        {% if hour | int >= late_h | int or hour | int < 6 %}
           {{ late_br }}
-        {% elif sun_elevation | float <= 0 %}
-          {{ eve_br }}
-        {% else %}
+        {% elif sun_el > 10 %}
           {{ day_br }}
-        {% endif %}
-      auto_color_temp: >
-        {% if current_hour | int >= late_hour | int or current_hour | int < 6 %}
-          {{ late_ct }}
-        {% elif sun_elevation | float <= 0 %}
-          {{ eve_ct }}
+        {% elif sun_el > -4 %}
+          {{ sunset_br }}
         {% else %}
+          {{ eve_br }}
+        {% endif %}
+      mood_color_temp: >
+        {% if hour | int >= late_h | int or hour | int < 6 %}
+          {{ late_ct }}
+        {% elif sun_el > 10 %}
           {{ day_ct }}
+        {% elif sun_el > -4 %}
+          {{ sunset_ct }}
+        {% else %}
+          {{ eve_ct }}
         {% endif %}
       # Check of er lampen aan staan in de kamer
       lights_on: >
@@ -257,14 +288,13 @@ action:
 
   - choose:
       # ============================================
-      # 1x DRUK - Toggle (uit/aan op basis van zon)
+      # 1x DRUK — Sfeer toggle (zon-gebaseerd)
       # ============================================
       - conditions:
           - condition: trigger
             id: single
         sequence:
           - choose:
-              # Lampen staan aan -> uitzetten
               - conditions:
                   - condition: template
                     value_template: "{{ lights_on }}"
@@ -272,18 +302,16 @@ action:
                   - action: light.turn_off
                     target:
                       area_id: !input target_area
-
-            # Lampen staan uit -> aanzetten op basis van zon
             default:
               - action: light.turn_on
                 target:
                   area_id: !input target_area
                 data:
-                  brightness_pct: "{{ auto_brightness | int }}"
-                  color_temp_kelvin: "{{ auto_color_temp | int }}"
+                  brightness_pct: "{{ mood_brightness | int }}"
+                  color_temp_kelvin: "{{ mood_color_temp | int }}"
 
       # ============================================
-      # 2x DRUK - Helder wit licht
+      # 2x DRUK — Focus (helder wit werklicht)
       # ============================================
       - conditions:
           - condition: trigger
@@ -293,25 +321,99 @@ action:
             target:
               area_id: !input target_area
             data:
-              brightness_pct: !input bright_brightness
-              color_temp_kelvin: !input bright_color_temp
+              brightness_pct: !input focus_brightness
+              color_temp_kelvin: !input focus_color_temp
 
       # ============================================
-      # 3x DRUK - Sfeerverlichting
+      # 3x DRUK — Feestmodus (kleur-fade loop)
       # ============================================
       - conditions:
           - condition: trigger
             id: triple
         sequence:
+          # Zet lampen aan op startkleur
           - action: light.turn_on
             target:
               area_id: !input target_area
             data:
-              brightness_pct: !input cozy_brightness
-              color_temp_kelvin: !input cozy_color_temp
+              brightness_pct: !input party_brightness
+              rgb_color: [255, 0, 0]
+              transition: 1
+          - delay:
+              seconds: 2
+          # Oneindige loop — wordt gestopt door mode: restart
+          # bij de volgende knopdruk
+          - repeat:
+              while:
+                - condition: template
+                  value_template: "{{ true }}"
+              sequence:
+                # Rood → Geel
+                - action: light.turn_on
+                  target:
+                    area_id: !input target_area
+                  data:
+                    rgb_color: [255, 180, 0]
+                    transition: !input party_transition
+                - delay:
+                    seconds: !input party_transition
+                # Geel → Groen
+                - action: light.turn_on
+                  target:
+                    area_id: !input target_area
+                  data:
+                    rgb_color: [0, 255, 0]
+                    transition: !input party_transition
+                - delay:
+                    seconds: !input party_transition
+                # Groen → Cyaan
+                - action: light.turn_on
+                  target:
+                    area_id: !input target_area
+                  data:
+                    rgb_color: [0, 255, 200]
+                    transition: !input party_transition
+                - delay:
+                    seconds: !input party_transition
+                # Cyaan → Blauw
+                - action: light.turn_on
+                  target:
+                    area_id: !input target_area
+                  data:
+                    rgb_color: [0, 0, 255]
+                    transition: !input party_transition
+                - delay:
+                    seconds: !input party_transition
+                # Blauw → Paars
+                - action: light.turn_on
+                  target:
+                    area_id: !input target_area
+                  data:
+                    rgb_color: [150, 0, 255]
+                    transition: !input party_transition
+                - delay:
+                    seconds: !input party_transition
+                # Paars → Roze
+                - action: light.turn_on
+                  target:
+                    area_id: !input target_area
+                  data:
+                    rgb_color: [255, 0, 150]
+                    transition: !input party_transition
+                - delay:
+                    seconds: !input party_transition
+                # Roze → Rood (loop opnieuw)
+                - action: light.turn_on
+                  target:
+                    area_id: !input target_area
+                  data:
+                    rgb_color: [255, 0, 0]
+                    transition: !input party_transition
+                - delay:
+                    seconds: !input party_transition
 
       # ============================================
-      # LANG INDRUKKEN - Nachtlamp
+      # LANG INDRUKKEN — Nachtlamp
       # ============================================
       - conditions:
           - condition: trigger
@@ -323,3 +425,4 @@ action:
             data:
               brightness_pct: !input night_brightness
               color_temp_kelvin: !input night_color_temp
+
